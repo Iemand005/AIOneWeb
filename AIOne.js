@@ -62,11 +62,10 @@ AIOne.prototype.streamCompletion = function(model, messages, onTokenCallback, on
 			buffer += decoder.decode(chunkResult.value, { stream: true });
 			var lines = buffer.split("\n");
 			
-			// Houd de laatste (potentieel onvolledige) regel in de buffer
 			buffer = lines.pop() || "";
 
 			for (var i = 0; i < lines.length; i++) {
-				var line = lines[i].replace(/^\s+|\s+$/g, ""); // manual trim
+				var line = lines[i].replace(/^\s+|\s+$/g, "");
 				if (line === "") continue;
 				if (line === "data: [DONE]") {
 					if (onDoneCallback) onDoneCallback();
@@ -87,7 +86,6 @@ AIOne.prototype.streamCompletion = function(model, messages, onTokenCallback, on
 				}
 			}
 
-			// Lees de volgende chunk uit de stream
 			return reader.read().then(processChunk);
 		}
 
@@ -97,7 +95,7 @@ AIOne.prototype.streamCompletion = function(model, messages, onTokenCallback, on
 	});
 };
 
-function onLoad() {
+function initAIOne() {
 	var apiForm = document.getElementById("api-form");
 	/** @type {HTMLInputElement?} */
 	var apiKeyInput = document.getElementById("api-key-input");
@@ -123,4 +121,4 @@ function onLoad() {
 	};
 }
 
-window.addEventListener("load", onLoad, false);
+window.addEventListener("load", initAIOne, false);
