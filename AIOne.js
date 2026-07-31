@@ -7,13 +7,17 @@ function AIOne() {
 
 function onLoad() {
     var apiForm = document.getElementById("api-form");
+    var apiKeyInput = document.getElementById("api-key-input");
+    var inputForm = document.getElementById("message-form");
+    
     apiForm.onsubmit = function(ev) {
         ev.preventDefault();
 
-        console.log("Sending message...");
+        console.log("Sending model request...");
+
     };
-    
-    var inputForm = document.getElementById("message-form");
+
+
     inputForm.onsubmit = function(ev) {
         ev.preventDefault();
 
