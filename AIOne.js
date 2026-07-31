@@ -122,7 +122,7 @@ function initAIOne() {
 	inputForm.onsubmit = function(ev) {
 		ev.preventDefault();
 		if (!(messageInput instanceof HTMLInputElement)) return;
-		if (!(outputDiv instanceof HTMLInputElement)) return;
+		if (!(outputDiv)) return;
 
 		var messageItem = document.createElement("li");
 		// messageList
