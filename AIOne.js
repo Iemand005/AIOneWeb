@@ -101,6 +101,7 @@ function initAIOne() {
 	var inputForm = document.getElementById("message-form");
 	var messageInput = document.getElementById("message-input");
 	var modelInput = document.getElementById("model-input");
+	var outputDiv = document.getElementById("message-list");
 
 	if (!(inputForm instanceof HTMLFormElement)) return;
 	if (!(apiForm instanceof HTMLFormElement)) return;
@@ -121,6 +122,11 @@ function initAIOne() {
 	inputForm.onsubmit = function(ev) {
 		ev.preventDefault();
 		if (!(messageInput instanceof HTMLInputElement)) return;
+		if (!(outputDiv instanceof HTMLInputElement)) return;
+
+		var messageItem = document.createElement("li");
+		// messageList
+		outputDiv.appendChild(messageItem);
 
 		console.log("Sending message...");
 
@@ -135,9 +141,8 @@ function initAIOne() {
             selectedModel, 
             messages, 
             function(token) {
-                var outputDiv = document.getElementById("chat-output");
-                if (outputDiv) {
-                    outputDiv.innerHTML += token;
+                if (messageItem) {
+                    messageItem.innerHTML += token;
                 }
             }, 
             function() {
