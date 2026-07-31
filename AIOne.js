@@ -18,7 +18,7 @@ function onLoad() {
 
         console.log("Sending model request...");
         if (apiKeyInput) {
-            aiOne.apiKey = apiapiKeyInput.value;
+            aiOne.apiKey = apiKeyInput.value.trim();
         }
     };
 
