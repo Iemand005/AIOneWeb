@@ -101,11 +101,11 @@ function initAIOne() {
 	var inputForm = document.getElementById("message-form");
 	var inputForm = document.getElementById("message-form");
 
-	apiForm.onsubmit = function(ev) {
+	if (apiForm instance of HTMLFormElement) apiForm.onsubmit = function(ev) {
 		ev.preventDefault();
 
 		console.log("Sending model request...");
-		if (apiKeyInput instanceof HTMLInputElement && apiKeyInput != null) {
+		if (apiKeyInput instanceof HTMLInputElement) {
 			aiOne.apiKey = apiKeyInput.value.trim();
 		}
 		aiOne.getModels(function(models) {
@@ -114,7 +114,7 @@ function initAIOne() {
 	};
 
 
-	inputForm.onsubmit = function(ev) {
+	if (inputForm instance of HTMLFormElement) inputForm.onsubmit = function(ev) {
 		ev.preventDefault();
 
 		console.log("Sending message...");
