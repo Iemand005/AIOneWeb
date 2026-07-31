@@ -1,53 +1,126 @@
 
 
 function AIOne() {
-    this.baseUrl = "https://api.groq.com/openai/v1";
-    this.apiKey = "";
+	this.baseUrl = "https://api.groq.com/openai/v1";
+	this.apiKey = "";
 }
 
 var aiOne = new AIOne();
 
 /** @param {(models:string[])=>void} callback */
 AIOne.prototype.getModels = function(callback) {
-    if (!this.apiKey) throw new Error("API Key not defined");
+	if (!this.apiKey) throw new Error("API Key not defined");
 
-    fetch(this.baseUrl + "/models", {
-        method: "GET",
-        headers: {
-            "Authorization": `Bearer ${this.apiKey}`,
-            "Content-Type": "application/json"
-        }
-    }).then(function(response) { return response.json(); }).then(function(result) {
-        var models = result.data;
-        console.log(models);
-        callback(models);
-    });
+	fetch(this.baseUrl + "/models", {
+		method: "GET",
+		headers: {
+			"Authorization": `Bearer ${this.apiKey}`,
+			"Content-Type": "application/json"
+		}
+	}).then(function(response) { return response.json(); }).then(function(result) {
+		var models = result.data;
+		console.log(models);
+		callback(models);
+	});
+};
+
+/** 
+ * @param {string} model 
+ * @param {any[]} messages 
+ * @param {(token:string)=>void} onTokenCallback 
+ * @param {()=>void} onDoneCallback 
+ */
+AIOne.prototype.streamCompletion = function(model, messages, onTokenCallback, onDoneCallback) {
+	if (!this.apiKey) throw new Error("API Key not defined");
+
+	var bodyData = {
+		"model": model,
+		"messages": messages,
+		"stream": true
+	};
+
+	fetch(this.baseUrl + "/chat/completions", {
+		method: "POST",
+		headers: {
+			"Authorization": "Bearer " + this.apiKey,
+			"Content-Type": "application/json"
+		},
+		body: JSON.stringify(bodyData)
+	}).then(function(response) {
+		if (!response.body) throw new Error("Streaming not supported by browser response");
+		
+		var reader = response.body.getReader();
+		var decoder = new TextDecoder("utf-8");
+		var buffer = "";
+
+		function processChunk(chunkResult) {
+			if (chunkResult.done) {
+				if (onDoneCallback) onDoneCallback();
+				return;
+			}
+
+			buffer += decoder.decode(chunkResult.value, { stream: true });
+			var lines = buffer.split("\n");
+			
+			// Houd de laatste (potentieel onvolledige) regel in de buffer
+			buffer = lines.pop() || "";
+
+			for (var i = 0; i < lines.length; i++) {
+				var line = lines[i].replace(/^\s+|\s+$/g, ""); // manual trim
+				if (line === "") continue;
+				if (line === "data: [DONE]") {
+					if (onDoneCallback) onDoneCallback();
+					return;
+				}
+
+				if (line.indexOf("data: ") === 0) {
+					var jsonStr = line.substring(6);
+					try {
+						var parsed = JSON.parse(jsonStr);
+						var delta = parsed.choices[0].delta;
+						if (delta && delta.content) {
+							onTokenCallback(delta.content);
+						}
+					} catch (e) {
+						// Sla corrupte of onvolledige regels over
+					}
+				}
+			}
+
+			// Lees de volgende chunk uit de stream
+			return reader.read().then(processChunk);
+		}
+
+		return reader.read().then(processChunk);
+	})["catch"](function(err) {
+		console.error("Stream error:", err);
+	});
 };
 
 function onLoad() {
-    var apiForm = document.getElementById("api-form");
-    /** @type {HTMLInputElement?} */
-    var apiKeyInput = document.getElementById("api-key-input");
-    var inputForm = document.getElementById("message-form");
+	var apiForm = document.getElementById("api-form");
+	/** @type {HTMLInputElement?} */
+	var apiKeyInput = document.getElementById("api-key-input");
+	var inputForm = document.getElementById("message-form");
 
-    apiForm.onsubmit = function(ev) {
-        ev.preventDefault();
+	apiForm.onsubmit = function(ev) {
+		ev.preventDefault();
 
-        console.log("Sending model request...");
-        if (apiKeyInput) {
-            aiOne.apiKey = apiKeyInput.value.trim();
-        }
-        aiOne.getModels(function(models) {
-            console.log("Received models liset!!", models);
-        });
-    };
+		console.log("Sending model request...");
+		if (apiKeyInput) {
+			aiOne.apiKey = apiKeyInput.value.trim();
+		}
+		aiOne.getModels(function(models) {
+			console.log("Received models liset!!", models);
+		});
+	};
 
 
-    inputForm.onsubmit = function(ev) {
-        ev.preventDefault();
+	inputForm.onsubmit = function(ev) {
+		ev.preventDefault();
 
-        console.log("Sending message...");
-    };
+		console.log("Sending message...");
+	};
 }
 
 window.addEventListener("load", onLoad, false);
