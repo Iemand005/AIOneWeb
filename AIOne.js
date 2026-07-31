@@ -17,7 +17,11 @@ AIOne.prototype.getModels = function(callback) {
             "Authorization": `Bearer ${this.apiKey}`,
             "Content-Type": "application/json"
         }
-    })';'
+    }).then(function(result) {
+        var models = result.data;
+        console.log(models);
+        callback(models);
+    });
 };
 
 function onLoad() {
