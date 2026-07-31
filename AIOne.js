@@ -37,6 +37,9 @@ function onLoad() {
         if (apiKeyInput) {
             aiOne.apiKey = apiKeyInput.value.trim();
         }
+        aiOne.getModels(function(models) {
+            console.log("Received models liset!!", models);
+        });
     };
 
 
