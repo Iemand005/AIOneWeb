@@ -7,6 +7,11 @@ function AIOne() {
 
 var aiOne = new AIOne();
 
+/** @param {(models:string[])=>void} callback */
+AIOne.prototype.getModels = function(callback) {
+    return this.models;
+};
+
 function onLoad() {
     var apiForm = document.getElementById("api-form");
     /** @type {HTMLInputElement?} */
