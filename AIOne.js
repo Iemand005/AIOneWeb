@@ -105,7 +105,7 @@ function initAIOne() {
 		ev.preventDefault();
 
 		console.log("Sending model request...");
-		if (apiKeyInput instanceof HTMLInputElement && apiKeyInput != null) {}
+		if (apiKeyInput instanceof HTMLInputElement && apiKeyInput != null) {
 			aiOne.apiKey = apiKeyInput.value.trim();
 		}
 		aiOne.getModels(function(models) {
