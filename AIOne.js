@@ -97,15 +97,15 @@ AIOne.prototype.streamCompletion = function(model, messages, onTokenCallback, on
 
 function initAIOne() {
 	var apiForm = document.getElementById("api-form");
-	/** @type {HTMLInputElement?} */
 	var apiKeyInput = document.getElementById("api-key-input");
+	var inputForm = document.getElementById("message-form");
 	var inputForm = document.getElementById("message-form");
 
 	apiForm.onsubmit = function(ev) {
 		ev.preventDefault();
 
 		console.log("Sending model request...");
-		if (apiKeyInput) {
+		if (apiKeyInput instanceof HTMLInputElement && apiKeyInput != null) {}
 			aiOne.apiKey = apiKeyInput.value.trim();
 		}
 		aiOne.getModels(function(models) {
