@@ -1,7 +1,7 @@
 
 
 function AIOne() {
-
+    this.baseUrl = "https://api.groq.com/openai/v1";
 }
 
 function onLoad() {
