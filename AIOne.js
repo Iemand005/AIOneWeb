@@ -99,7 +99,7 @@ function initAIOne() {
 	var apiForm = document.getElementById("api-form");
 	var apiKeyInput = document.getElementById("api-key-input");
 	var inputForm = document.getElementById("message-form");
-	var inputForm = document.getElementById("message-form");
+	var messageInput = document.getElementById("message-input");
 
 	if (!(inputForm instanceof HTMLFormElement) ) return;
 	if (!(apiForm instanceof HTMLFormElement) ) return;
@@ -119,8 +119,30 @@ function initAIOne() {
 
 	inputForm.onsubmit = function(ev) {
 		ev.preventDefault();
+		if (!(messageInput instanceof HTMLInputElement) ) return;
 
 		console.log("Sending message...");
+
+		var prompt = messageInput ? messageInput.value : "";
+        var selectedModel = "llama-3.3-70b-versatile";
+        
+        var messages = [
+            { "role": "user", "content": prompt }
+        ];
+
+        aiOne.streamCompletion(
+            selectedModel, 
+            messages, 
+            function(token) {
+                var outputDiv = document.getElementById("chat-output");
+                if (outputDiv) {
+                    outputDiv.innerHTML += token;
+                }
+            }, 
+            function() {
+                console.log("Stream completely finished!");
+            }
+        );
 	};
 }
 
