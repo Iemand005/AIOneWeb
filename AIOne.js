@@ -101,7 +101,10 @@ function initAIOne() {
 	var inputForm = document.getElementById("message-form");
 	var inputForm = document.getElementById("message-form");
 
-	if (apiForm instanceof HTMLFormElement) apiForm.onsubmit = function(ev) {
+	if (!(inputForm instanceof HTMLFormElement) ) return;
+	if (!(apiForm instanceof HTMLFormElement) ) return;
+
+	apiForm.onsubmit = function(ev) {
 		ev.preventDefault();
 
 		console.log("Sending model request...");
@@ -114,7 +117,7 @@ function initAIOne() {
 	};
 
 
-	if (inputForm instanceof HTMLFormElement) inputForm.onsubmit = function(ev) {
+	inputForm.onsubmit = function(ev) {
 		ev.preventDefault();
 
 		console.log("Sending message...");
