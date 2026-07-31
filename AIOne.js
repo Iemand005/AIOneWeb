@@ -17,7 +17,7 @@ AIOne.prototype.getModels = function(callback) {
             "Authorization": `Bearer ${this.apiKey}`,
             "Content-Type": "application/json"
         }
-    }).then(function(result) {
+    }).then(function(response) { return response.json(); }).then(function(result) {
         var models = result.data;
         console.log(models);
         callback(models);
