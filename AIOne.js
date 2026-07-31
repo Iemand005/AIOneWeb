@@ -6,6 +6,8 @@ function AIOne() {
 }
 
 function onLoad() {
+    var apiForm = document.getElementById("api-form");
+
     var inputForm = document.getElementById("message-form");
     inputForm.onsubmit = function(ev) {
         ev.preventDefault();
