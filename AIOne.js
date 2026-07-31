@@ -100,9 +100,10 @@ function initAIOne() {
 	var apiKeyInput = document.getElementById("api-key-input");
 	var inputForm = document.getElementById("message-form");
 	var messageInput = document.getElementById("message-input");
+	var modelInput = document.getElementById("model-input");
 
-	if (!(inputForm instanceof HTMLFormElement) ) return;
-	if (!(apiForm instanceof HTMLFormElement) ) return;
+	if (!(inputForm instanceof HTMLFormElement)) return;
+	if (!(apiForm instanceof HTMLFormElement)) return;
 
 	apiForm.onsubmit = function(ev) {
 		ev.preventDefault();
@@ -119,7 +120,7 @@ function initAIOne() {
 
 	inputForm.onsubmit = function(ev) {
 		ev.preventDefault();
-		if (!(messageInput instanceof HTMLInputElement) ) return;
+		if (!(messageInput instanceof HTMLInputElement)) return;
 
 		console.log("Sending message...");
 
