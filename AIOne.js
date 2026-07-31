@@ -9,7 +9,15 @@ var aiOne = new AIOne();
 
 /** @param {(models:string[])=>void} callback */
 AIOne.prototype.getModels = function(callback) {
-    return this.models;
+    if (!this.apiKey) throw new Error("API Key not defined");
+
+    fetch(this.baseUrl + "/models", {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${this.apiKey}`,
+            "Content-Type": "application/json"
+        }
+    })';'
 };
 
 function onLoad() {
