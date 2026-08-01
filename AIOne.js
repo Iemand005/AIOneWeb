@@ -1,11 +1,11 @@
 
-
-function AIOne() {
-	this.baseUrl = "https://api.groq.com/openai/v1";
+/** @param {string} [baseUrl] */
+function AIOne(baseUrl) {
+	this.baseUrl = baseUrl || "https://api.groq.com/openai/v1";
 	this.apiKey = "";
 }
 
-var aiOne = new AIOne();
+var aiOne = new AIOne("https://openrouter.ai/api/v1");
 
 /** @param {(models:string[])=>void} callback */
 AIOne.prototype.getModels = function(callback) {
