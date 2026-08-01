@@ -3,7 +3,7 @@
 function AIOne(baseUrl) {
 	this.baseUrl = baseUrl || "https://api.groq.com/openai/v1";
 	this.apiKey = "";
-}
+}f
 
 var aiOne = new AIOne("https://openrouter.ai/api/v1");
 
