@@ -53,6 +53,7 @@ AIOne.prototype.streamCompletion = function(model, messages, onTokenCallback, on
 		var decoder = new TextDecoder("utf-8");
 		var buffer = "";
 
+		/** @param {{done:boolean, value?:Uint8Array}} chunkResult @returns {Promise<void>|void} */
 		function processChunk(chunkResult) {
 			if (chunkResult.done) {
 				if (onDoneCallback) onDoneCallback();
@@ -102,9 +103,18 @@ function initAIOne() {
 	var messageInput = document.getElementById("message-input");
 	var modelInput = document.getElementById("model-input");
 	var outputDiv = document.getElementById("message-list");
+	var selectedModel = "llama-3.3-70b-versatile";
+	var modelSelect = modelInput instanceof HTMLSelectElement ? modelInput : null;
 
 	if (!(inputForm instanceof HTMLFormElement)) return;
 	if (!(apiForm instanceof HTMLFormElement)) return;
+
+	if (modelSelect) {
+		var currentModelSelect = modelSelect;
+		currentModelSelect.onchange = function() {
+			selectedModel = currentModelSelect.value;
+		};
+	}
 
 	apiForm.onsubmit = function(ev) {
 		ev.preventDefault();
@@ -114,10 +124,25 @@ function initAIOne() {
 			aiOne.apiKey = apiKeyInput.value.trim();
 		}
 		aiOne.getModels(function(models) {
-			console.log("Received models liset!!", models);
+			console.log("Received models list!!", models);
+			if (modelSelect) {
+				modelSelect.innerHTML = "";
+				for (var i = 0; i < models.length; i++) {
+					var model = models[i];
+					var option = document.createElement("option");
+					var modelId = model && typeof model === "object" && "id" in model ? String(model["id"]) : String(model);
+					option.value = modelId;
+					option.textContent = modelId;
+					modelSelect.appendChild(option);
+				}
+				if (models.length > 0) {
+					var firstModel = models[0];
+					var firstModelId = firstModel && typeof firstModel === "object" && "id" in firstModel ? String(firstModel["id"]) : String(firstModel);
+					selectedModel = modelSelect.value || firstModelId;
+				}
+			}
 		});
 	};
-
 
 	inputForm.onsubmit = function(ev) {
 		ev.preventDefault();
@@ -125,30 +150,27 @@ function initAIOne() {
 		if (!(outputDiv)) return;
 
 		var messageItem = document.createElement("li");
-		// messageList
 		outputDiv.appendChild(messageItem);
 
 		console.log("Sending message...");
 
-		var prompt = messageInput ? messageInput.value : "";
-        var selectedModel = "llama-3.3-70b-versatile";
-        
-        var messages = [
-            { "role": "user", "content": prompt }
-        ];
+		var prompt = messageInput.value;
+		var messages = [
+			{ "role": "user", "content": prompt }
+		];
 
-        aiOne.streamCompletion(
-            selectedModel, 
-            messages, 
-            function(token) {
-                if (messageItem) {
-                    messageItem.innerHTML += token;
-                }
-            }, 
-            function() {
-                console.log("Stream completely finished!");
-            }
-        );
+		aiOne.streamCompletion(
+			selectedModel,
+			messages,
+			function(token) {
+				if (messageItem) {
+					messageItem.innerHTML += token;
+				}
+			},
+			function() {
+				console.log("Stream completely finished!");
+			}
+		);
 	};
 }
 
