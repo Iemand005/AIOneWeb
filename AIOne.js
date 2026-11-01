@@ -19,21 +19,17 @@ export default class AIOne {
 
 		const workerType = options.workerType ?? "shared";
 
-		let worker;
+		workerUrl.searchParams.set("workerType", workerType);
 
-		if (workerType === "shared") {
-			worker = new SharedWorker(workerUrl, {
+		const worker = workerType === "shared"
+			? new SharedWorker(workerUrl, {
+				name: options.name ?? "AIOne",
+				type: "classic"
+			})
+			: new Worker(workerUrl, {
 				name: options.name ?? "AIOne",
 				type: "classic"
 			});
-		} else if (workerType === "dedicated") {
-			worker = new Worker(workerUrl, {
-				name: options.name ?? "AIOne",
-				type: "classic"
-			});
-		} else {
-			throw new Error(`Unsupported worker type: ${workerType}`);
-		}
 
 		worker.onerror = event => {
 			console.error("AIOne worker error:", event);
