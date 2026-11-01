@@ -40,7 +40,7 @@
     "./workerfs-bridge": "./workerfs-bridge.js",
     "./single": "./build/Release/AIOneWeb.js",
     "./single/wasm": "./build/Release/AIOneWeb.wasm",
-    "./mt": "./build/Release-mt/AIOneWebMTok.js",
+    "./mt": "./build/Release-mt/AIOneWebMT.js",
     "./mt/wasm": "./build/Release-mt/AIOneWebMT.wasm",
     "./AIOneWeb.js": "./build/Release/AIOneWeb.js",
     "./AIOneWeb.wasm": "./build/Release/AIOneWeb.wasm",
