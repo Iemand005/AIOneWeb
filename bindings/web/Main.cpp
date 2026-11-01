@@ -9,7 +9,7 @@ static std::string generateWithTokenCallback(
     unsigned int maxTokens,
     emscripten::val onToken
 ) {
-    AIOne::TokenCallback callback = nullptr;
+    TokenCallback callback = nullptr;
 
     if (!onToken.isUndefined() && !onToken.isNull()) {
         callback = [onToken](const std::string& token) {
@@ -25,7 +25,12 @@ EMSCRIPTEN_BINDINGS(ai_one) {
     class_<AIOne::ModelSession>("ModelSession")
         .constructor<>()
         .function("loadModel", &AIOne::ModelSession::loadModel, emscripten::async())
-        .function("generate", &generateWithTokenCallback, emscripten::async())
+        .function(
+            "generate",
+            &generateWithTokenCallback,
+            allow_raw_pointer<arg<0>>(),
+            emscripten::async()
+        )
         .function("unloadModel", &AIOne::ModelSession::unloadModel, emscripten::async())
         .function("isLoaded", &AIOne::ModelSession::isLoaded);
 }
