@@ -1,9 +1,10 @@
 export interface AIOneOptions {
-    workerUrl?: string | URL;
+    workerUrl?: string;
     runtimeUrl?: string;
     wasmUrl?: string;
-    threads?: boolean;
     name?: string;
+    threads?: boolean;
+    workerType?: "shared" | "dedicated";
 }
 
 export default class AIOne {
