@@ -51,6 +51,16 @@
         "LLAMA_BUILD_SERVER": "OFF",
         "LLAMA_BUILD_COMMON": "ON"
       }
+    },
+    {
+      "name": "emscripten-webgpu-mt",
+      "displayName": "Emscripten WebGPU (Multithreaded)",
+      "inherits": "emscripten-webgpu",
+      "binaryDir": "${sourceDir}/build/emscripten-webgpu-mt",
+      "cacheVariables": {
+        "AIONE_WEB_PTHREADS": "ON",
+        "AIONE_WEB_PTHREAD_POOL_SIZE": "8"
+      }
     }
   ],
   "buildPresets": [
@@ -58,6 +68,14 @@
       "name": "debug",
       "configurePreset": "default",
       "configuration": "Debug"
+    },
+    {
+      "name": "emscripten-webgpu",
+      "configurePreset": "emscripten-webgpu"
+    },
+    {
+      "name": "emscripten-webgpu-mt",
+      "configurePreset": "emscripten-webgpu-mt"
     }
   ]
 }
