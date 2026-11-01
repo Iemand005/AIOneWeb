@@ -17,7 +17,7 @@ export default class AIOne {
 			workerUrl.searchParams.set("wasm", options.wasmUrl);
 		}
 
-		const workerType = options.workerType ?? "shared";
+		const workerType = options.threads ? "dedicated" : (options.workerType ?? "shared");
 
 		workerUrl.searchParams.set("workerType", workerType);
 
