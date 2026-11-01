@@ -1,0 +1,63 @@
+{
+  "version": 8,
+  "configurePresets": [
+    {
+      "name": "default",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl"
+      }
+    },
+    {
+      "name": "Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/Release",
+      "architecture": {
+        "value": "x64",
+        "strategy": "external"
+      },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl"
+      }
+    },
+    {
+      "name": "emscripten-webgpu",
+      "displayName": "Emscripten WebGPU",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/emscripten-webgpu",
+      "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "GGML_WEBGPU": "ON",
+        "GGML_WEBGPU_JSPI": "OFF",
+        "EMDAWNWEBGPU_DIR": "C:/deps/emdawnwebgpu/emdawnwebgpu_pkg",
+        "BUILD_SHARED_LIBS": "OFF",
+        "GGML_NATIVE": "OFF",
+        "GGML_OPENMP": "OFF",
+        "GGML_RPC": "OFF",
+        "GGML_CUDA": "OFF",
+        "GGML_VULKAN": "OFF",
+        "LLAMA_BUILD_TESTS": "OFF",
+        "LLAMA_BUILD_EXAMPLES": "OFF",
+        "LLAMA_BUILD_SERVER": "OFF",
+        "LLAMA_BUILD_COMMON": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "default",
+      "configuration": "Debug"
+    }
+  ]
+}
