@@ -79,8 +79,7 @@ if (self.name?.startsWith("em-pthread")) {
         if (!initializing && !module) {
             initializing = (async () => {
                 const moduleOptions = {
-                    workerFile: file,
-                    mainScriptUrlOrBlob: runtimeUrl
+                    workerFile: file
                 };
 
                 if (WASM_OVERRIDE || !HAS_EXTERNAL_RUNTIME) {
