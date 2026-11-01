@@ -1,19 +1,58 @@
 {
   "name": "@aione/web",
   "version": "1.0.0",
+  "description": "Browser AI inference powered by llama.cpp and WebGPU",
+  "keywords": [
+    "ai",
+    "llm",
+    "llama.cpp",
+    "webgpu",
+    "wasm",
+    "inference",
+    "browser",
+    "sharedworker"
+  ],
+  "homepage": "https://github.com/Iemand005/AIOneWeb#readme",
+  "bugs": {
+    "url": "https://github.com/Iemand005/AIOneWeb/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Iemand005/AIOneWeb.git"
+  },
+  "license": "ISC",
+  "author": "",
   "type": "module",
-  "main": "./index.js",
-  "module": "./index.js",
-  "types": "./index.d.ts",
+  "main": "./AIOne.js",
+  "module": "./AIOne.js",
+  "types": "./AIOne.d.ts",
   "exports": {
     ".": {
       "types": "./AIOne.d.ts",
-      "import": "./index.js"
-    }
+      "import": "./AIOne.js",
+      "default": "./AIOne.js"
+    },
+    "./rpc": {
+      "import": "./RPCClient.js",
+      "default": "./RPCClient.js"
+    },
+    "./runtime": "./worker-runtime.js",
+    "./workerfs-bridge": "./workerfs-bridge.js",
+    "./AIOneWeb.js": "./AIOneWeb.js",
+    "./AIOneWeb.wasm": "./AIOneWeb.wasm",
+    "./package.json": "./package.json"
   },
   "files": [
-    "*.js",
-    "*.d.ts",
-    "*.wasm"
-  ]
+    "AIOne.js",
+    "AIOne.d.ts",
+    "AIOneWeb.js",
+    "AIOneWeb.wasm",
+    "RPCClient.js",
+    "worker-runtime.js",
+    "workerfs-bridge.js",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }
