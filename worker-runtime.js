@@ -1,3 +1,10 @@
+
+self.addEventListener("securitypolicyviolation", e => {
+    console.error("CSP BLOCKED:", e.violatedDirective, e.blockedURI);
+});
+
+console.log("Worker runtime loaded");
+
 let module;
 let session;
 let initializing;
@@ -7,34 +14,52 @@ let operationQueue = Promise.resolve();
 
 const WORKER_URL = new URL(self.location.href);
 const SEARCH_PARAMS = WORKER_URL.searchParams;
-const USE_THREADS =
-    SEARCH_PARAMS.get("threads") === "1" && typeof Worker !== "undefined";
 
-const DEFAULT_RUNTIME_DIR = new URL(
-    USE_THREADS ? "./build/Release-mt/" : "./build/Release/",
-    WORKER_URL
-);
+const RUNTIME_OVERRIDE = SEARCH_PARAMS.get("runtime");
+const WASM_OVERRIDE = SEARCH_PARAMS.get("wasm");
+const WORKER_TYPE = SEARCH_PARAMS.get("workerType") ?? "shared";
 
-const RUNTIME_URL = SEARCH_PARAMS.get("runtime")
-    ? new URL(SEARCH_PARAMS.get("runtime"), WORKER_URL).href
-    : new URL(
-        USE_THREADS ? "AIOneWebMT.js" : "AIOneWeb.js",
-        DEFAULT_RUNTIME_DIR
-    ).href;
-
-const WASM_URL = SEARCH_PARAMS.get("wasm");
 const HAS_EXTERNAL_RUNTIME = typeof Module !== "undefined";
 
+function getRuntimeUrl(threaded) {
+    return new URL(
+        threaded
+            ? "./build/Release-mt/AIOneWebMT.js"
+            : "./build/Release/AIOneWeb.js",
+        WORKER_URL
+    ).href;
+}
+
+let threaded =
+    SEARCH_PARAMS.get("threads") === "1" &&
+    typeof SharedArrayBuffer !== "undefined";
+
+let runtimeUrl = RUNTIME_OVERRIDE
+    ? new URL(RUNTIME_OVERRIDE, WORKER_URL).href
+    : getRuntimeUrl(threaded);
+
 if (!HAS_EXTERNAL_RUNTIME) {
-    importScripts(RUNTIME_URL);
+    try {
+        importScripts(runtimeUrl);
+    } catch (error) {
+        if (threaded && !RUNTIME_OVERRIDE) {
+            console.warn("Threaded runtime failed; falling back:", error);
+
+            threaded = false;
+            runtimeUrl = getRuntimeUrl(false);
+            importScripts(runtimeUrl);
+        } else {
+            throw error;
+        }
+    }
 }
 
 function locateFile(path) {
-    if (WASM_URL) {
-        return new URL(WASM_URL, WORKER_URL).href;
+    if (WASM_OVERRIDE) {
+        return new URL(WASM_OVERRIDE, WORKER_URL).href;
     }
 
-    return new URL(path, RUNTIME_URL).href;
+    return new URL(path, runtimeUrl).href;
 }
 
 async function initialize(file) {
@@ -43,17 +68,19 @@ async function initialize(file) {
     }
 
     if (module && mountedFile !== file.name) {
-        throw new Error("This runtime is already initialized with another model file");
+        throw new Error(
+            "This runtime is already initialized with another model file"
+        );
     }
 
     if (!initializing && !module) {
         initializing = (async () => {
             const moduleOptions = {
                 workerFile: file,
-                mainScriptUrlOrBlob: runtimeUrl,
+                mainScriptUrlOrBlob: runtimeUrl
             };
 
-            if (WASM_URL || !HAS_EXTERNAL_RUNTIME) {
+            if (WASM_OVERRIDE || !HAS_EXTERNAL_RUNTIME) {
                 moduleOptions.locateFile = locateFile;
             }
 
@@ -87,7 +114,7 @@ async function invoke(method, args, onToken) {
                 throw new Error("No model is loaded");
             }
 
-            return await session.generate(
+            return session.generate(
                 args.prompt,
                 args.maxTokens ?? 512,
                 onToken
@@ -104,12 +131,13 @@ async function invoke(method, args, onToken) {
     }
 }
 
-self.onconnect = event => {
-    const port = event.ports[0];
-
+function handleConnection(port) {
     port.onmessage = ({ data }) => {
         const onToken = data.args?.stream
-            ? token => port.postMessage({ id: data.id, token })
+            ? token => port.postMessage({
+                id: data.id,
+                token
+            })
             : null;
 
         const execute = operationQueue.then(() =>
@@ -123,7 +151,6 @@ self.onconnect = event => {
                 id: data.id,
                 result
             }),
-
             error => port.postMessage({
                 id: data.id,
                 error: error?.message ?? String(error)
@@ -131,6 +158,16 @@ self.onconnect = event => {
         );
     };
 
-    port.start();
+    port.start?.();
     port.postMessage({ type: "ready" });
-};
+}
+
+if (WORKER_TYPE === "shared") {
+    self.onconnect = event => {
+        handleConnection(event.ports[0]);
+    };
+} else if (WORKER_TYPE === "dedicated") {
+    handleConnection(self);
+} else {
+    throw new Error(`Unsupported worker type: ${WORKER_TYPE}`);
+}
