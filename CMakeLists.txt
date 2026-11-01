@@ -10,8 +10,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if(EMSCRIPTEN)
     add_compile_options("-sMEMORY64=1")
     add_link_options("-sMEMORY64=1")
-    add_compile_options(--use-port=emdawnwebgpu)
-    add_link_options(--use-port=emdawnwebgpu)
+    # add_compile_options(--use-port=emdawnwebgpu)
+    # add_link_options(--use-port=emdawnwebgpu)
 endif()
 
 add_subdirectory(
