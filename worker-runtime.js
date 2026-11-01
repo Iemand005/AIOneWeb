@@ -7,7 +7,8 @@ let operationQueue = Promise.resolve();
 
 const WORKER_URL = new URL(self.location.href);
 const SEARCH_PARAMS = WORKER_URL.searchParams;
-const USE_THREADS = SEARCH_PARAMS.get("threads") === "1";
+const USE_THREADS =
+    SEARCH_PARAMS.get("threads") === "1" && typeof Worker !== "undefined";
 
 const DEFAULT_RUNTIME_DIR = new URL(
     USE_THREADS ? "./build/Release-mt/" : "./build/Release/",
