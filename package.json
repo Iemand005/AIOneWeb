@@ -1,5 +1,5 @@
 {
-  "name": "@aione/web",
+  "name": "aione-web",
   "version": "1.0.0",
   "description": "Browser AI inference powered by llama.cpp and WebGPU",
   "keywords": [
