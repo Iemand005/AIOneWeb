@@ -71,7 +71,7 @@ async function initialize(file) {
         await initializing;
     }
 
-    session.loadModel("/models/" + file.name);
+    await session.loadModel("/models/" + file.name);
 }
 
 async function invoke(method, args) {
@@ -84,11 +84,11 @@ async function invoke(method, args) {
                 throw new Error("No model is loaded");
             }
 
-            return session.generate(args.prompt, args.maxTokens ?? 512);
+            return await session.generate(args.prompt, args.maxTokens ?? 512);
 
         case "unloadModel":
             if (session?.isLoaded()) {
-                session.unloadModel();
+                await session.unloadModel();
             }
             return;
 
