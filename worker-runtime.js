@@ -22,8 +22,9 @@ const RUNTIME_URL = SEARCH_PARAMS.get("runtime")
     ).href;
 
 const WASM_URL = SEARCH_PARAMS.get("wasm");
+const HAS_EXTERNAL_RUNTIME = typeof Module !== "undefined";
 
-if (typeof Module === "undefined") {
+if (!HAS_EXTERNAL_RUNTIME) {
     importScripts(RUNTIME_URL);
 }
 
@@ -46,10 +47,13 @@ async function initialize(file) {
 
     if (!initializing && !module) {
         initializing = (async () => {
-            module = await Module({
-                workerFile: file,
-                locateFile
-            });
+            const moduleOptions = { workerFile: file };
+
+            if (WASM_URL || !HAS_EXTERNAL_RUNTIME) {
+                moduleOptions.locateFile = locateFile;
+            }
+
+            module = await Module(moduleOptions);
 
             mountedFile = file.name;
             session = new module.ModelSession();
