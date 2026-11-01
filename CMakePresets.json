@@ -37,6 +37,7 @@
       "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "AIONE_WEBGPU": "ON",
         "GGML_WEBGPU": "ON",
         "GGML_WEBGPU_JSPI": "OFF",
         "EMDAWNWEBGPU_DIR": "C:/deps/emdawnwebgpu/emdawnwebgpu_pkg",
