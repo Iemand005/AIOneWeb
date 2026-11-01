@@ -55,6 +55,11 @@ export default class AIOne {
 			const pending = this.pending.get(data.id);
 			if (!pending) return;
 
+			if (data.token !== undefined) {
+				pending.onToken?.(data.token);
+				return;
+			}
+
 			this.pending.delete(data.id);
 
 			if (data.error) {
@@ -81,11 +86,11 @@ export default class AIOne {
 		return this.readyPromise;
 	}
 
-	call(method, args = {}) {
+	call(method, args = {}, onToken = null) {
 		const id = ++this.nextId;
 
 		return new Promise((resolve, reject) => {
-			this.pending.set(id, { resolve, reject });
+			this.pending.set(id, { resolve, reject, onToken });
 
 			this.port.postMessage({
 				id,
@@ -99,8 +104,12 @@ export default class AIOne {
 		return this.call("loadModel", { file });
 	}
 
-	generate(prompt, maxTokens = 512) {
-		return this.call("generate", { prompt, maxTokens });
+	generate(prompt, maxTokens = 512, onToken = null) {
+		return this.call(
+			"generate",
+			{ prompt, maxTokens, stream: Boolean(onToken) },
+			onToken
+		);
 	}
 
 	unloadModel() {

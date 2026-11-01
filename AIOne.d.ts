@@ -10,7 +10,11 @@ export default class AIOne {
     static create(options?: AIOneOptions): Promise<AIOne>;
 
     loadModel(file: File): Promise<void>;
-    generate(prompt: string, maxTokens?: number): Promise<string>;
+    generate(
+        prompt: string,
+        maxTokens?: number,
+        onToken?: (token: string) => void
+    ): Promise<string>;
     unloadModel(): Promise<void>;
     close(): void;
 }
