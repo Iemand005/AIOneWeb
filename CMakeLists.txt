@@ -30,7 +30,7 @@ if(NOT EXISTS "${NODE_API_HEADERS_DIR}/node_api.h")
         "Run 'npm install' or set NODE_API_HEADERS_DIR.")
         endif()
         
-        if(EMSCRIPTEN)
+if(EMSCRIPTEN)
 
     add_executable(AIOneWeb
         bindings/web/Main.cpp
