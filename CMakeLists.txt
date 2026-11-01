@@ -10,6 +10,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if(EMSCRIPTEN)
     add_compile_options("-sMEMORY64=1")
     add_link_options("-sMEMORY64=1")
+    add_compile_options(--use-port=emdawnwebgpu)
+    add_link_options(--use-port=emdawnwebgpu)
 endif()
 
 add_subdirectory(
@@ -26,9 +28,9 @@ if(NOT EXISTS "${NODE_API_HEADERS_DIR}/node_api.h")
     message(FATAL_ERROR
         "Node-API headers not found in '${NODE_API_HEADERS_DIR}'. "
         "Run 'npm install' or set NODE_API_HEADERS_DIR.")
-endif()
-
-if(EMSCRIPTEN)
+        endif()
+        
+        if(EMSCRIPTEN)
 
     add_executable(AIOneWeb
         bindings/web/Main.cpp
@@ -53,7 +55,6 @@ if(EMSCRIPTEN)
         -sSTACK_SIZE=16MB
         --pre-js "${CMAKE_CURRENT_SOURCE_DIR}/workerfs-bridge.js"
     )
-
     target_link_libraries(AIOneWeb PRIVATE AIOneCore)
 
 
