@@ -5,7 +5,35 @@ let mountedFile;
 
 let operationQueue = Promise.resolve();
 
-const BASE_URL = "https://iemand005.github.io/AIOneJS/web/";
+const WORKER_URL = new URL(self.location.href);
+const SEARCH_PARAMS = WORKER_URL.searchParams;
+const USE_THREADS = SEARCH_PARAMS.get("threads") === "1";
+
+const DEFAULT_RUNTIME_DIR = new URL(
+    USE_THREADS ? "./build/Release-mt/" : "./build/Release/",
+    WORKER_URL
+);
+
+const RUNTIME_URL = SEARCH_PARAMS.get("runtime")
+    ? new URL(SEARCH_PARAMS.get("runtime"), WORKER_URL).href
+    : new URL(
+        USE_THREADS ? "AIOneWebMT.js" : "AIOneWeb.js",
+        DEFAULT_RUNTIME_DIR
+    ).href;
+
+const WASM_URL = SEARCH_PARAMS.get("wasm");
+
+if (typeof Module === "undefined") {
+    importScripts(RUNTIME_URL);
+}
+
+function locateFile(path) {
+    if (WASM_URL) {
+        return new URL(WASM_URL, WORKER_URL).href;
+    }
+
+    return new URL(path, RUNTIME_URL).href;
+}
 
 async function initialize(file) {
     if (session) {
@@ -20,9 +48,7 @@ async function initialize(file) {
         initializing = (async () => {
             module = await Module({
                 workerFile: file,
-
-                locateFile: path =>
-                    new URL(path, BASE_URL).href
+                locateFile
             });
 
             mountedFile = file.name;

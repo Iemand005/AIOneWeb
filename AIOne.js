@@ -1,6 +1,21 @@
 export default class AIOne {
 	static async create(options = {}) {
-		const workerUrl = options.workerUrl ?? "/aio1-worker.js";
+		const workerUrl = new URL(
+			options.workerUrl ?? "/aio1-worker.js",
+			globalThis.location?.href ?? import.meta.url
+		);
+
+		if (options.threads) {
+			workerUrl.searchParams.set("threads", "1");
+		}
+
+		if (options.runtimeUrl) {
+			workerUrl.searchParams.set("runtime", options.runtimeUrl);
+		}
+
+		if (options.wasmUrl) {
+			workerUrl.searchParams.set("wasm", options.wasmUrl);
+		}
 
 		if (typeof SharedWorker === "undefined") {
 			throw new Error("SharedWorker is not supported by this browser");

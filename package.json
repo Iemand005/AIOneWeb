@@ -38,18 +38,23 @@
     },
     "./runtime": "./worker-runtime.js",
     "./workerfs-bridge": "./workerfs-bridge.js",
-    "./AIOneWeb.js": "./AIOneWeb.js",
-    "./AIOneWeb.wasm": "./AIOneWeb.wasm",
+    "./single": "./build/Release/AIOneWeb.js",
+    "./single/wasm": "./build/Release/AIOneWeb.wasm",
+    "./mt": "./build/Release-mt/AIOneWebMT.js",
+    "./mt/wasm": "./build/Release-mt/AIOneWebMT.wasm",
+    "./build/*": "./build/*",
     "./package.json": "./package.json"
   },
   "files": [
     "AIOne.js",
     "AIOne.d.ts",
-    "AIOneWeb.js",
-    "AIOneWeb.wasm",
     "RPCClient.js",
     "worker-runtime.js",
     "workerfs-bridge.js",
+    "build/Release/AIOneWeb.js",
+    "build/Release/AIOneWeb.wasm",
+    "build/Release-mt/AIOneWebMT.js",
+    "build/Release-mt/AIOneWebMT.wasm",
     "README.md"
   ],
   "publishConfig": {

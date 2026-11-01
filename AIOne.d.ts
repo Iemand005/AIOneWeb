@@ -1,5 +1,8 @@
 export interface AIOneOptions {
-    workerUrl?: string;
+    workerUrl?: string | URL;
+    runtimeUrl?: string;
+    wasmUrl?: string;
+    threads?: boolean;
     name?: string;
 }
 
