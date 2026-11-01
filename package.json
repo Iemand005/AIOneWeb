@@ -32,10 +32,6 @@
       "import": "./AIOne.js",
       "default": "./AIOne.js"
     },
-    "./rpc": {
-      "import": "./RPCClient.js",
-      "default": "./RPCClient.js"
-    },
     "./runtime": "./worker-runtime.js",
     "./workerfs-bridge": "./workerfs-bridge.js",
     "./single": "./build/Release/AIOneWeb.js",
@@ -52,7 +48,6 @@
   "files": [
     "AIOne.js",
     "AIOne.d.ts",
-    "RPCClient.js",
     "worker-runtime.js",
     "workerfs-bridge.js",
     "build/Release/AIOneWeb.js",
