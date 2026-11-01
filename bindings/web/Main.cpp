@@ -34,3 +34,9 @@ EMSCRIPTEN_BINDINGS(ai_one) {
         .function("unloadModel", &AIOne::ModelSession::unloadModel, emscripten::async())
         .function("isLoaded", &AIOne::ModelSession::isLoaded);
 }
+
+#ifdef __EMSCRIPTEN_PTHREADS__
+#error "Pthreads are enabled"
+#else
+#error "Pthreads are NOT enabled"
+#endif
