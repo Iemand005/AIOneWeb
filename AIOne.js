@@ -17,24 +17,32 @@ export default class AIOne {
 			workerUrl.searchParams.set("wasm", options.wasmUrl);
 		}
 
-		if (typeof SharedWorker === "undefined") {
-			throw new Error("SharedWorker is not supported by this browser");
+		const workerType = options.workerType ?? "dedicated";
+
+		let worker;
+
+		if (workerType === "shared") {
+			worker = new SharedWorker(workerUrl, {
+				name: options.name ?? "AIOne",
+				type: "classic"
+			});
+		} else if (workerType === "dedicated") {
+			worker = new Worker(workerUrl, {
+				name: options.name ?? "AIOne",
+				type: "classic"
+			});
+		} else {
+			throw new Error(`Unsupported worker type: ${workerType}`);
 		}
 
-		// const worker = new SharedWorker(workerUrl, {
-		// 	name: options.name ?? "AIOne",
-		// 	type: "classic"
-		// });
-		const worker = new SharedWorker(workerUrl, {
-			name: `AIOne-${Date.now()}`,
-			type: "classic"
-		});
-
 		worker.onerror = event => {
-			console.error("AIOne SharedWorker error:", event);
+			console.error("AIOne worker error:", event);
 		};
 
-		const client = new AIOne(worker.port);
+		const client = new AIOne(
+			workerType === "shared" ? worker.port : worker
+		);
+
 		await client.ready();
 
 		return client;
