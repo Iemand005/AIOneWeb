@@ -42,6 +42,10 @@
     "./single/wasm": "./build/Release/AIOneWeb.wasm",
     "./mt": "./build/Release-mt/AIOneWebMT.js",
     "./mt/wasm": "./build/Release-mt/AIOneWebMT.wasm",
+    "./AIOneWeb.js": "./build/Release/AIOneWeb.js",
+    "./AIOneWeb.wasm": "./build/Release/AIOneWeb.wasm",
+    "./AIOneWebMT.js": "./build/Release-mt/AIOneWebMT.js",
+    "./AIOneWebMT.wasm": "./build/Release-mt/AIOneWebMT.wasm",
     "./build/*": "./build/*",
     "./package.json": "./package.json"
   },
