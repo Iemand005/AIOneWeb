@@ -21,8 +21,12 @@ export default class AIOne {
 			throw new Error("SharedWorker is not supported by this browser");
 		}
 
+		// const worker = new SharedWorker(workerUrl, {
+		// 	name: options.name ?? "AIOne",
+		// 	type: "classic"
+		// });
 		const worker = new SharedWorker(workerUrl, {
-			name: options.name ?? "AIOne",
+			name: `AIOne-${Date.now()}`,
 			type: "classic"
 		});
 
