@@ -18,17 +18,6 @@ add_subdirectory(
     "../AIOne"
     "${CMAKE_CURRENT_BINARY_DIR}/AIOne"
 )
-
-if(NOT NODE_API_HEADERS_DIR)
-    set(NODE_API_HEADERS_DIR
-        "${CMAKE_CURRENT_SOURCE_DIR}/node_modules/node-api-headers/include")
-endif()
-
-if(NOT EXISTS "${NODE_API_HEADERS_DIR}/node_api.h")
-    message(FATAL_ERROR
-        "Node-API headers not found in '${NODE_API_HEADERS_DIR}'. "
-        "Run 'npm install' or set NODE_API_HEADERS_DIR.")
-        endif()
         
 if(EMSCRIPTEN)
 
