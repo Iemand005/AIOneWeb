@@ -91,7 +91,7 @@ export default class AIOne {
 			this.pending.clear();
 		};
 
-		this.port.start();
+		this.port.start?.();
 	}
 
 	ready() {
