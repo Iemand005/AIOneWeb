@@ -17,11 +17,9 @@ if(EMSCRIPTEN)
     # add_link_options(--use-port=emdawnwebgpu)
 
     if(AIONE_WEB_PTHREADS)
-        target_compile_options(AIOne PRIVATE -pthread)
-        target_link_options(AIOne PRIVATE
-            -pthread
-            -sPTHREAD_POOL_SIZE=4
-        )
+        add_compile_options(-pthread)
+        add_link_options(-pthread)
+        add_compile_definitions(_REENTRANT)
     endif()
 endif()
 
