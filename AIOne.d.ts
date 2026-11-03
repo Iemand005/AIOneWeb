@@ -17,6 +17,7 @@ export interface GenerateCallbacks {
 
 export interface GenerateStats {
     promptTokens: number;
+    evaluatedTokens: number;
     cachedTokens: number;
     generatedTokens: number;
     promptEvalMs: number;

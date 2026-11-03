@@ -77,7 +77,8 @@ static emscripten::val generateWithCallbacks(
     auto result = session->generate(prompt, maxTokens, generateCallbacksFromValue(callbacks));
 
     emscripten::val stats = emscripten::val::object();
-    stats.set("promptTokens", static_cast<double>(result.tokensEvaluated));
+    stats.set("promptTokens", static_cast<double>(result.tokensEvaluated + result.tokensCached));
+    stats.set("evaluatedTokens", static_cast<double>(result.tokensEvaluated));
     stats.set("cachedTokens", static_cast<double>(result.tokensCached));
     stats.set("generatedTokens", static_cast<double>(result.tokensGenerated));
     stats.set("promptEvalMs", result.promptEvalMs);
