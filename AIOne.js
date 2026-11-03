@@ -64,7 +64,32 @@ export default class AIOne {
 			if (!pending) return;
 
 			if (data.token !== undefined) {
-				pending.onToken?.(data.token);
+				pending.onToken?.(data.token, data.thinking ?? false);
+
+				if (data.thinking) {
+					pending.onThinkingToken?.(data.token);
+				}
+
+				return;
+			}
+
+			if (data.thinkingChange !== undefined) {
+				pending.onThinkingChange?.(data.thinkingChange);
+				return;
+			}
+
+			if (data.promptProgress !== undefined) {
+				pending.onPromptProgress?.(data.promptProgress);
+				return;
+			}
+
+			if (data.generationStart !== undefined) {
+				pending.onGenerationStart?.();
+				return;
+			}
+
+			if (data.progress !== undefined) {
+				pending.onProgress?.(data.progress);
 				return;
 			}
 
@@ -94,11 +119,11 @@ export default class AIOne {
 		return this.readyPromise;
 	}
 
-	call(method, args = {}, onToken = null) {
+	call(method, args = {}, callbacks = null) {
 		const id = ++this.nextId;
 
 		return new Promise((resolve, reject) => {
-			this.pending.set(id, { resolve, reject, onToken });
+			this.pending.set(id, { resolve, reject, ...callbacks });
 
 			this.port.postMessage({
 				id,
@@ -108,15 +133,30 @@ export default class AIOne {
 		});
 	}
 
-	loadModel(file) {
-		return this.call("loadModel", { file });
+	loadModel(file, onProgress = null) {
+		return this.call(
+			"loadModel",
+			{ file, progress: Boolean(onProgress) },
+			{ onProgress }
+		);
 	}
 
-	generate(prompt, maxTokens = 512, onToken = null) {
+	generate(prompt, maxTokens = 512, callbacks = null) {
+		if (typeof callbacks === "function") {
+			callbacks = { onToken: callbacks };
+		}
+
 		return this.call(
 			"generate",
-			{ prompt, maxTokens, stream: Boolean(onToken) },
-			onToken
+			{
+				prompt,
+				maxTokens,
+				stream: Boolean(callbacks?.onToken || callbacks?.onThinkingToken),
+				thinkingState: Boolean(callbacks?.onThinkingChange),
+				promptProgress: Boolean(callbacks?.onPromptProgress),
+				generationStart: Boolean(callbacks?.onGenerationStart)
+			},
+			callbacks
 		);
 	}
 

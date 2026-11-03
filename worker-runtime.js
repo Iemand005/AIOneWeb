@@ -65,7 +65,7 @@ if (self.name?.startsWith("em-pthread")) {
         return new URL(path, runtimeUrl).href;
     }
 
-    async function initialize(file) {
+    async function initialize(file, onProgress) {
         if (session) {
             throw new Error("A model is already loaded");
         }
@@ -103,13 +103,16 @@ if (self.name?.startsWith("em-pthread")) {
             await initializing;
         }
 
-        await session.loadModel("/models/" + file.name);
+        await session.loadModel(
+            "/models/" + file.name,
+            onProgress ?? undefined
+        );
     }
 
-    async function invoke(method, args, onToken) {
+    async function invoke(method, args, callbacks) {
         switch (method) {
             case "loadModel":
-                return initialize(args.file);
+                return initialize(args.file, callbacks.onProgress);
 
             case "generate":
                 if (!session?.isLoaded()) {
@@ -119,7 +122,12 @@ if (self.name?.startsWith("em-pthread")) {
                 return session.generate(
                     args.prompt,
                     args.maxTokens ?? 512,
-                    onToken
+                    {
+                        onTokenReasoning: callbacks.onToken,
+                        onInputEval: callbacks.onPromptProgress,
+                        onGenerationStart: callbacks.onGenerationStart,
+                        onThinkStateChange: callbacks.onThinkingChange
+                    }
                 );
 
             case "unloadModel":
@@ -135,15 +143,46 @@ if (self.name?.startsWith("em-pthread")) {
 
     function handleConnection(port) {
         port.onmessage = ({ data }) => {
-            const onToken = data.args?.stream
-                ? token => port.postMessage({
+            const callbacks = {};
+
+            if (data.args?.stream) {
+                callbacks.onToken = (token, thinking) => port.postMessage({
                     id: data.id,
-                    token
-                })
-                : null;
+                    token,
+                    thinking
+                });
+            }
+
+            if (data.args?.thinkingState) {
+                callbacks.onThinkingChange = thinking => port.postMessage({
+                    id: data.id,
+                    thinkingChange: thinking
+                });
+            }
+
+            if (data.args?.promptProgress) {
+                callbacks.onPromptProgress = progress => port.postMessage({
+                    id: data.id,
+                    promptProgress: progress
+                });
+            }
+
+            if (data.args?.generationStart) {
+                callbacks.onGenerationStart = () => port.postMessage({
+                    id: data.id,
+                    generationStart: true
+                });
+            }
+
+            if (data.args?.progress) {
+                callbacks.onProgress = progress => port.postMessage({
+                    id: data.id,
+                    progress
+                });
+            }
 
             const execute = operationQueue.then(() =>
-                invoke(data.method, data.args ?? {}, onToken)
+                invoke(data.method, data.args ?? {}, callbacks)
             );
 
             operationQueue = execute.catch(() => {});
