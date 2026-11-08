@@ -113,15 +113,14 @@ static std::string stringField(const emscripten::val& object, const char* name) 
 
 static void ttsLoadProgress(int stage, float progress, void* userData) {
     auto* callback = static_cast<emscripten::val*>(userData);
-    (*callback)(
-        stage == AIONE_TTS_LOAD_STAGE_BACKBONE ? "backbone" : "mmproj",
-        progress
-    );
+    const std::string stageName =
+        stage == AIONE_TTS_LOAD_STAGE_BACKBONE ? "backbone" : "mmproj";
+    (*callback)(stageName, progress);
 }
 
 static void ttsSynthesisProgress(int frameIndex, void* userData) {
     auto* callback = static_cast<emscripten::val*>(userData);
-    (*callback)("synthesis", frameIndex + 1);
+    (*callback)(std::string("synthesis"), frameIndex + 1);
 }
 
 static int ttsDeviceFromValue(const emscripten::val& value) {
@@ -137,15 +136,10 @@ static int ttsDeviceFromValue(const emscripten::val& value) {
 }
 
 static aione_tts_load_options ttsLoadOptionsFromValue(
-    const emscripten::val& value,
-    emscripten::val& onProgress
+    const emscripten::val& value
 ) {
     aione_tts_load_options options{};
     options.flash_attention = 1;
-    if (isFunction(onProgress)) {
-        options.on_progress = ttsLoadProgress;
-        options.user_data = &onProgress;
-    }
 
     if (!hasValue(value)) return options;
 
@@ -230,12 +224,15 @@ public:
     ) {
         if (!handle_) return false;
 
-        const auto rawOptions = ttsLoadOptionsFromValue(options, onProgress);
-        return aione_tts_load_model(
+        const auto rawOptions = ttsLoadOptionsFromValue(options);
+        const bool reportProgress = isFunction(onProgress);
+        return aione_tts_load_model_with_progress(
             handle_,
             modelPath.c_str(),
             mmprojPath.c_str(),
-            &rawOptions
+            &rawOptions,
+            reportProgress ? ttsLoadProgress : nullptr,
+            reportProgress ? &onProgress : nullptr
         ) != 0;
     }
 
