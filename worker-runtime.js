@@ -132,13 +132,15 @@ if (self.name?.startsWith("em-pthread")) {
         const modelPath = "/models/" + files[0].name;
         const mmprojPath = "/models/" + files[1].name;
 
-        if (!tts.loadModel(modelPath, mmprojPath, options ?? {})) {
-            const error = tts.lastError();
-
-            tts.unloadModel();
+        try {
+            const loaded = await tts.loadModel(modelPath, mmprojPath, options ?? {});
+            if (!loaded) {
+                throw new Error(tts.lastError() || "Failed to load TTS model");
+            }
+        } catch (error) {
+            tts.delete();
             tts = undefined;
-            ttsModule = undefined;
-            throw new Error(error || "Failed to load TTS model");
+            throw error;
         }
     }
 
@@ -155,7 +157,7 @@ if (self.name?.startsWith("em-pthread")) {
                     throw new Error("No TTS model is loaded");
                 }
 
-                const result = tts.synthesize(args.prompt, args.options ?? {});
+                const result = await tts.synthesize(args.prompt, args.options ?? {});
                 if (!result.ok) {
                     throw new Error(result.error || tts.lastError() || "Failed to synthesize speech");
                 }
@@ -164,7 +166,11 @@ if (self.name?.startsWith("em-pthread")) {
             }
 
             case "ttsUnloadModel":
-                tts?.unloadModel();
+                if (tts) {
+                    tts.unloadModel();
+                    tts.delete();
+                    tts = undefined;
+                }
                 return;
 
             case "ttsVoices": {
