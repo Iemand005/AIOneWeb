@@ -8,7 +8,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 option(AIONE_WEB_PTHREADS "Build the Emscripten web target with pthreads multithreading" OFF)
+option(AIONE_WEB_TTS "Build the Emscripten web target with text-to-speech support" ON)
 set(AIONE_WEB_PTHREAD_POOL_SIZE 8 CACHE STRING "Number of pthread workers to preallocate")
+
+if(AIONE_WEB_TTS)
+    set(AIONE_ENABLE_TTS ON CACHE BOOL "Enable text-to-speech support (builds libmtmd)" FORCE)
+endif()
 
 if(EMSCRIPTEN)
     add_compile_options(-m64)

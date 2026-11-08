@@ -164,6 +164,30 @@ export default class AIOne {
 		return this.call("unloadModel");
 	}
 
+	ttsLoadModel(modelFile, mmprojFile, options = {}) {
+		return this.call("ttsLoadModel", {
+			files: [modelFile, mmprojFile],
+			options
+		});
+	}
+
+	ttsSynthesize(prompt, options = {}) {
+		return this.call("ttsSynthesize", { prompt, options });
+	}
+
+	ttsUnloadModel() {
+		return this.call("ttsUnloadModel");
+	}
+
+	async ttsVoices() {
+		const json = await this.call("ttsVoices");
+		return JSON.parse(json);
+	}
+
+	ttsIsLoaded() {
+		return this.call("ttsIsLoaded");
+	}
+
 	close() {
 		this.port.close();
 

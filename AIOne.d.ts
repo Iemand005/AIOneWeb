@@ -31,6 +31,48 @@ export interface GenerateResult {
     stats: GenerateStats;
 }
 
+export type TtsDevice = "any" | "cpu" | "igpu" | "dgpu" | "accelerator";
+export type TtsAudioType = "pcm" | "wav";
+
+export interface TtsLoadOptions {
+    threadCount?: number;
+    flashAttention?: boolean;
+    device?: TtsDevice;
+}
+
+export interface TtsVoice {
+    referenceFile?: string;
+    builtInName?: string;
+    builtInIndex?: number;
+}
+
+export interface TtsSynthesisOptions {
+    outputType?: TtsAudioType;
+    voice?: TtsVoice;
+    lang?: string;
+    topK?: number;
+    topP?: number;
+    seed?: number;
+    batchSize?: number;
+    maxTokens?: number;
+}
+
+export interface TtsSynthesisStats {
+    promptEvalMs: number;
+    generationMs: number;
+    conversionMs: number;
+}
+
+export interface TtsSynthesisResult {
+    ok: boolean;
+    sampleRate: number;
+    samples: number;
+    audioType: TtsAudioType;
+    audio: Uint8Array;
+    stats: TtsSynthesisStats;
+    error?: string;
+}
+
 export default class AIOne {
     static create(options?: AIOneOptions): Promise<AIOne>;
 
@@ -44,6 +86,18 @@ export default class AIOne {
         callbacks?: GenerateCallbacks | ((token: string, thinking: boolean) => void)
     ): Promise<GenerateResult>;
     unloadModel(): Promise<void>;
+    ttsLoadModel(
+        modelFile: File,
+        mmprojFile: File,
+        options?: TtsLoadOptions
+    ): Promise<void>;
+    ttsSynthesize(
+        prompt: string,
+        options?: TtsSynthesisOptions
+    ): Promise<TtsSynthesisResult>;
+    ttsUnloadModel(): Promise<void>;
+    ttsVoices(): Promise<string[]>;
+    ttsIsLoaded(): Promise<boolean>;
     close(): void;
 }
 

@@ -1,4 +1,8 @@
+#include <cstdint>
+#include <string>
+
 #include <emscripten/bind.h>
+#include "AIOne.h"
 #include "ModelSession.hpp"
 
 using namespace emscripten;
@@ -92,6 +96,214 @@ static emscripten::val generateWithCallbacks(
     return output;
 }
 
+static bool hasValue(const emscripten::val& value) {
+    return !value.isUndefined() && !value.isNull();
+}
+
+static emscripten::val property(const emscripten::val& object, const char* name) {
+    if (!hasValue(object)) return emscripten::val::undefined();
+    return object[name];
+}
+
+static std::string stringField(const emscripten::val& object, const char* name) {
+    const auto value = property(object, name);
+    return hasValue(value) ? value.as<std::string>() : std::string();
+}
+
+static int ttsDeviceFromValue(const emscripten::val& value) {
+    if (!hasValue(value)) return AIONE_TTS_DEVICE_ANY;
+    if (value.typeOf() == "number") return value.as<int>();
+
+    const auto name = value.as<std::string>();
+    if (name == "cpu") return AIONE_TTS_DEVICE_CPU;
+    if (name == "igpu") return AIONE_TTS_DEVICE_IGPU;
+    if (name == "dgpu") return AIONE_TTS_DEVICE_DGPU;
+    if (name == "accelerator") return AIONE_TTS_DEVICE_ACCELERATOR;
+    return AIONE_TTS_DEVICE_ANY;
+}
+
+static aione_tts_load_options ttsLoadOptionsFromValue(const emscripten::val& value) {
+    aione_tts_load_options options{};
+    options.flash_attention = 1;
+
+    if (!hasValue(value)) return options;
+
+    const auto threadCount = property(value, "threadCount");
+    if (hasValue(threadCount)) options.thread_count = threadCount.as<int>();
+
+    const auto flashAttention = property(value, "flashAttention");
+    if (hasValue(flashAttention)) {
+        options.flash_attention = flashAttention.as<bool>() ? 1 : 0;
+    }
+
+    options.device = ttsDeviceFromValue(property(value, "device"));
+    return options;
+}
+
+static aione_tts_synthesis_options ttsSynthesisOptionsFromValue(
+    const emscripten::val& value,
+    std::string& referenceFile,
+    std::string& builtInName,
+    std::string& lang
+) {
+    aione_tts_synthesis_options options{};
+    options.output_type = AIONE_TTS_AUDIO_WAV;
+    options.top_k = 50;
+    options.top_p = 1.0f;
+    options.seed = 0xFFFFFFFFu;
+    options.batch_size = 512;
+    options.max_tokens = -1;
+
+    if (!hasValue(value)) return options;
+
+    const auto outputType = property(value, "outputType");
+    if (hasValue(outputType) && outputType.as<std::string>() == "pcm") {
+        options.output_type = AIONE_TTS_AUDIO_PCM;
+    }
+
+    const auto voice = property(value, "voice");
+    referenceFile = stringField(voice, "referenceFile");
+    builtInName = stringField(voice, "builtInName");
+
+    const auto builtInIndex = property(voice, "builtInIndex");
+    if (hasValue(builtInIndex)) {
+        options.voice.built_in_index = builtInIndex.as<int>();
+    }
+
+    lang = stringField(value, "lang");
+
+    const auto topK = property(value, "topK");
+    if (hasValue(topK)) options.top_k = topK.as<int>();
+
+    const auto topP = property(value, "topP");
+    if (hasValue(topP)) options.top_p = static_cast<float>(topP.as<double>());
+
+    const auto seed = property(value, "seed");
+    if (hasValue(seed)) options.seed = static_cast<unsigned int>(seed.as<double>());
+
+    const auto batchSize = property(value, "batchSize");
+    if (hasValue(batchSize)) options.batch_size = batchSize.as<int>();
+
+    const auto maxTokens = property(value, "maxTokens");
+    if (hasValue(maxTokens)) options.max_tokens = maxTokens.as<int>();
+
+    options.voice.reference_file = referenceFile.empty() ? nullptr : referenceFile.c_str();
+    options.voice.built_in_name = builtInName.empty() ? nullptr : builtInName.c_str();
+    options.lang = lang.empty() ? nullptr : lang.c_str();
+    return options;
+}
+
+class TtsSession {
+public:
+    TtsSession() : handle_(aione_tts_create()) {}
+
+    ~TtsSession() {
+        if (handle_) aione_tts_destroy(handle_);
+    }
+
+    bool loadModel(
+        const std::string& modelPath,
+        const std::string& mmprojPath,
+        emscripten::val options
+    ) {
+        if (!handle_) return false;
+
+        const auto rawOptions = ttsLoadOptionsFromValue(options);
+        return aione_tts_load_model(
+            handle_,
+            modelPath.c_str(),
+            mmprojPath.c_str(),
+            &rawOptions
+        ) != 0;
+    }
+
+    void unloadModel() {
+        if (handle_) aione_tts_unload_model(handle_);
+    }
+
+    bool isLoaded() const {
+        return handle_ && aione_tts_is_loaded(handle_) != 0;
+    }
+
+    std::string voicesJson() {
+        if (!handle_) return "[]";
+
+        char* json = aione_tts_voices_json(handle_);
+        if (!json) return "[]";
+
+        std::string value(json);
+        aione_string_free(json);
+        return value;
+    }
+
+    emscripten::val synthesize(const std::string& prompt, emscripten::val options) {
+        emscripten::val output = emscripten::val::object();
+        if (!handle_) {
+            output.set("ok", false);
+            output.set("error", lastError());
+            return output;
+        }
+
+        std::string referenceFile;
+        std::string builtInName;
+        std::string lang;
+        const auto rawOptions = ttsSynthesisOptionsFromValue(
+            options,
+            referenceFile,
+            builtInName,
+            lang
+        );
+
+        auto result = aione_tts_synthesize(
+            handle_,
+            prompt.c_str(),
+            &rawOptions,
+            nullptr,
+            nullptr
+        );
+
+        if (!result.ok) {
+            const std::string error = lastError();
+            aione_tts_synthesis_result_free(&result);
+            output.set("ok", false);
+            output.set("error", error);
+            return output;
+        }
+
+        emscripten::val audio = emscripten::val::global("Uint8Array").new_(0);
+        if (result.data && result.data_size > 0) {
+            emscripten::val view(emscripten::typed_memory_view(
+                static_cast<size_t>(result.data_size),
+                reinterpret_cast<const std::uint8_t*>(result.data)
+            ));
+            audio = view.call<emscripten::val>("slice");
+        }
+
+        emscripten::val stats = emscripten::val::object();
+        stats.set("promptEvalMs", result.prompt_eval_ms);
+        stats.set("generationMs", result.generation_ms);
+        stats.set("conversionMs", result.conversion_ms);
+
+        output.set("ok", true);
+        output.set("sampleRate", result.sample_rate);
+        output.set("samples", static_cast<double>(result.samples));
+        output.set("audioType", result.audio_type == AIONE_TTS_AUDIO_WAV ? "wav" : "pcm");
+        output.set("audio", audio);
+        output.set("stats", stats);
+
+        aione_tts_synthesis_result_free(&result);
+        return output;
+    }
+
+    std::string lastError() const {
+        const char* error = aione_last_error();
+        return error ? error : std::string();
+    }
+
+private:
+    aione_tts* handle_ = nullptr;
+};
+
 EMSCRIPTEN_BINDINGS(ai_one) {
 
     class_<AIOne::ModelSession>("ModelSession")
@@ -110,4 +322,13 @@ EMSCRIPTEN_BINDINGS(ai_one) {
         )
         .function("unloadModel", &AIOne::ModelSession::unloadModel, emscripten::async())
         .function("isLoaded", &AIOne::ModelSession::isLoaded);
+
+    class_<TtsSession>("TtsModel")
+        .constructor<>()
+        .function("loadModel", &TtsSession::loadModel, emscripten::async())
+        .function("synthesize", &TtsSession::synthesize, emscripten::async())
+        .function("unloadModel", &TtsSession::unloadModel)
+        .function("isLoaded", &TtsSession::isLoaded)
+        .function("voicesJson", &TtsSession::voicesJson)
+        .function("lastError", &TtsSession::lastError);
 }

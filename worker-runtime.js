@@ -12,6 +12,8 @@ if (self.name?.startsWith("em-pthread")) {
     let session;
     let initializing;
     let mountedFile;
+    let ttsModule;
+    let tts;
 
     let operationQueue = Promise.resolve();
 
@@ -79,7 +81,7 @@ if (self.name?.startsWith("em-pthread")) {
         if (!initializing && !module) {
             initializing = (async () => {
                 const moduleOptions = {
-                    workerFile: file
+                    workerFiles: [file]
                 };
 
                 if (WASM_OVERRIDE || !HAS_EXTERNAL_RUNTIME) {
@@ -109,10 +111,69 @@ if (self.name?.startsWith("em-pthread")) {
         );
     }
 
+    async function initializeTts(files, options) {
+        if (tts) {
+            throw new Error("A TTS model is already loaded");
+        }
+
+        if (!ttsModule) {
+            const moduleOptions = {
+                workerFiles: files
+            };
+
+            if (WASM_OVERRIDE || !HAS_EXTERNAL_RUNTIME) {
+                moduleOptions.locateFile = locateFile;
+            }
+
+            ttsModule = await Module(moduleOptions);
+            tts = new ttsModule.TtsModel();
+        }
+
+        const modelPath = "/models/" + files[0].name;
+        const mmprojPath = "/models/" + files[1].name;
+
+        if (!tts.loadModel(modelPath, mmprojPath, options ?? {})) {
+            const error = tts.lastError();
+
+            tts.unloadModel();
+            tts = undefined;
+            ttsModule = undefined;
+            throw new Error(error || "Failed to load TTS model");
+        }
+    }
+
     async function invoke(method, args, callbacks) {
         switch (method) {
             case "loadModel":
                 return initialize(args.file, callbacks.onProgress);
+
+            case "ttsLoadModel":
+                return initializeTts(args.files, args.options);
+
+            case "ttsSynthesize": {
+                if (!tts?.isLoaded()) {
+                    throw new Error("No TTS model is loaded");
+                }
+
+                const result = tts.synthesize(args.prompt, args.options ?? {});
+                if (!result.ok) {
+                    throw new Error(result.error || tts.lastError() || "Failed to synthesize speech");
+                }
+
+                return result;
+            }
+
+            case "ttsUnloadModel":
+                tts?.unloadModel();
+                return;
+
+            case "ttsVoices": {
+                if (!tts?.isLoaded()) return "[]";
+                return tts.voicesJson();
+            }
+
+            case "ttsIsLoaded":
+                return Boolean(tts?.isLoaded());
 
             case "generate":
                 if (!session?.isLoaded()) {
