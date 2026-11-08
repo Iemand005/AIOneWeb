@@ -160,10 +160,16 @@ if (self.name?.startsWith("em-pthread")) {
                     const percent = Math.floor(progress * 100);
                     if (percent === lastReportedPercent[stage]) return;
                     lastReportedPercent[stage] = percent;
-                    reportProgress(
-                        stage === "backbone" ? "loading-backbone" : "loading-mmproj",
-                        percent
-                    );
+                    if (stage === "backbone-ready") {
+                        reportProgress("backbone-ready", 100);
+                    } else if (stage === "mmproj-ready") {
+                        reportProgress("mmproj-ready", 100);
+                    } else {
+                        reportProgress(
+                            stage === "backbone" ? "loading-backbone" : "loading-mmproj",
+                            percent
+                        );
+                    }
                 }
             );
             if (!loaded) {
