@@ -15,8 +15,8 @@ static bool loadModelWithProgressCallback(
     ProgressCallback callback = nullptr;
 
     if (!onProgress.isUndefined() && !onProgress.isNull()) {
-        callback = [onProgress](const float progress) {
-            onProgress(progress);
+        callback = [onProgress](const float progress, const int a, const int b) {
+            onProgress(progress, a, b);
         };
     }
 
@@ -113,7 +113,7 @@ static std::string stringField(const emscripten::val& object, const char* name) 
 
 static int ttsDeviceFromValue(const emscripten::val& value) {
     if (!hasValue(value)) return AIONE_TTS_DEVICE_ANY;
-    if (value.typeOf() == "number") return value.as<int>();
+    if (value.typeOf().as<std::string>() == "number") return value.as<int>();
 
     const auto name = value.as<std::string>();
     if (name == "cpu") return AIONE_TTS_DEVICE_CPU;
