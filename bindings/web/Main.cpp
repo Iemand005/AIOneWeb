@@ -50,9 +50,10 @@ static AIOne::GenerateCallbacks generateCallbacksFromValue(const emscripten::val
 
     const auto onInputEval = callbacks["onInputEval"];
     if (isFunction(onInputEval)) {
-        result.onInputEval = [onInputEval](const float progress) {
-            onInputEval(progress);
-        };
+        // TODO fisx
+        // result.onInputEval = [onInputEval](const float progress) {
+        //     onInputEval(progress);
+        // };
     }
 
     const auto onGenerationStart = callbacks["onGenerationStart"];
