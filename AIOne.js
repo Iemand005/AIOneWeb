@@ -31,13 +31,13 @@ export default class AIOne {
 				type: "classic"
 			});
 
-		worker.onerror = event => {
-			console.error("AIOne worker error:", event);
-		};
-
 		const client = new AIOne(
 			workerType === "shared" ? worker.port : worker
 		);
+		worker.onerror = event => {
+			console.error("AIOne worker error:", event);
+			client.fail(new Error(event.message || "AIOne worker error"));
+		};
 
 		await client.ready();
 
@@ -48,6 +48,7 @@ export default class AIOne {
 		this.port = port;
 		this.nextId = 0;
 		this.pending = new Map();
+		this.failure = null;
 
 		this.readyPromise = new Promise((resolve, reject) => {
 			this.resolveReady = resolve;
@@ -103,13 +104,7 @@ export default class AIOne {
 		};
 
 		this.port.onmessageerror = () => {
-			this.rejectReady(new Error("AIOne worker message error"));
-
-			for (const pending of this.pending.values()) {
-				pending.reject(new Error("AIOne worker message error"));
-			}
-
-			this.pending.clear();
+			this.fail(new Error("AIOne worker message error"));
 		};
 
 		this.port.start?.();
@@ -119,7 +114,21 @@ export default class AIOne {
 		return this.readyPromise;
 	}
 
+	fail(error) {
+		if (this.failure) return;
+		this.failure = error;
+		this.rejectReady(error);
+
+		for (const pending of this.pending.values()) {
+			pending.reject(error);
+		}
+
+		this.pending.clear();
+	}
+
 	call(method, args = {}, callbacks = null) {
+		if (this.failure) return Promise.reject(this.failure);
+
 		const id = ++this.nextId;
 
 		return new Promise((resolve, reject) => {
