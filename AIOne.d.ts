@@ -40,6 +40,17 @@ export interface TtsLoadOptions {
     device?: TtsDevice;
 }
 
+export interface TtsProgressUpdate {
+    stage: string;
+    progress: number | null;
+    elapsedSeconds?: string;
+    frame?: number;
+    model?: string;
+    modelBytes?: number;
+    mmproj?: string;
+    mmprojBytes?: number;
+}
+
 export interface TtsVoice {
     referenceFile?: string;
     builtInName?: string;
@@ -89,11 +100,13 @@ export default class AIOne {
     ttsLoadModel(
         modelFile: File,
         mmprojFile: File,
-        options?: TtsLoadOptions
+        options?: TtsLoadOptions,
+        onProgress?: (update: TtsProgressUpdate) => void
     ): Promise<void>;
     ttsSynthesize(
         prompt: string,
-        options?: TtsSynthesisOptions
+        options?: TtsSynthesisOptions,
+        onProgress?: (update: TtsProgressUpdate) => void
     ): Promise<TtsSynthesisResult>;
     ttsUnloadModel(): Promise<void>;
     ttsVoices(): Promise<string[]>;

@@ -94,6 +94,11 @@ export default class AIOne {
 				return;
 			}
 
+			if (data.ttsProgress !== undefined) {
+				pending.onProgress?.(data.ttsProgress);
+				return;
+			}
+
 			this.pending.delete(data.id);
 
 			if (data.error) {
@@ -173,15 +178,24 @@ export default class AIOne {
 		return this.call("unloadModel");
 	}
 
-	ttsLoadModel(modelFile, mmprojFile, options = {}) {
-		return this.call("ttsLoadModel", {
-			files: [modelFile, mmprojFile],
-			options
-		});
+	ttsLoadModel(modelFile, mmprojFile, options = {}, onProgress = null) {
+		return this.call(
+			"ttsLoadModel",
+			{
+				files: [modelFile, mmprojFile],
+				options,
+				progress: Boolean(onProgress)
+			},
+			{ onProgress }
+		);
 	}
 
-	ttsSynthesize(prompt, options = {}) {
-		return this.call("ttsSynthesize", { prompt, options });
+	ttsSynthesize(prompt, options = {}, onProgress = null) {
+		return this.call(
+			"ttsSynthesize",
+			{ prompt, options, progress: Boolean(onProgress) },
+			{ onProgress }
+		);
 	}
 
 	ttsUnloadModel() {

@@ -111,6 +111,19 @@ static std::string stringField(const emscripten::val& object, const char* name) 
     return hasValue(value) ? value.as<std::string>() : std::string();
 }
 
+static void ttsLoadProgress(int stage, float progress, void* userData) {
+    auto* callback = static_cast<emscripten::val*>(userData);
+    (*callback)(
+        stage == AIONE_TTS_LOAD_STAGE_BACKBONE ? "backbone" : "mmproj",
+        progress
+    );
+}
+
+static void ttsSynthesisProgress(int frameIndex, void* userData) {
+    auto* callback = static_cast<emscripten::val*>(userData);
+    (*callback)("synthesis", frameIndex + 1);
+}
+
 static int ttsDeviceFromValue(const emscripten::val& value) {
     if (!hasValue(value)) return AIONE_TTS_DEVICE_ANY;
     if (value.typeOf().as<std::string>() == "number") return value.as<int>();
@@ -123,9 +136,16 @@ static int ttsDeviceFromValue(const emscripten::val& value) {
     return AIONE_TTS_DEVICE_ANY;
 }
 
-static aione_tts_load_options ttsLoadOptionsFromValue(const emscripten::val& value) {
+static aione_tts_load_options ttsLoadOptionsFromValue(
+    const emscripten::val& value,
+    emscripten::val& onProgress
+) {
     aione_tts_load_options options{};
     options.flash_attention = 1;
+    if (isFunction(onProgress)) {
+        options.on_progress = ttsLoadProgress;
+        options.user_data = &onProgress;
+    }
 
     if (!hasValue(value)) return options;
 
@@ -205,11 +225,12 @@ public:
     bool loadModel(
         const std::string& modelPath,
         const std::string& mmprojPath,
-        emscripten::val options
+        emscripten::val options,
+        emscripten::val onProgress
     ) {
         if (!handle_) return false;
 
-        const auto rawOptions = ttsLoadOptionsFromValue(options);
+        const auto rawOptions = ttsLoadOptionsFromValue(options, onProgress);
         return aione_tts_load_model(
             handle_,
             modelPath.c_str(),
@@ -237,7 +258,11 @@ public:
         return value;
     }
 
-    emscripten::val synthesize(const std::string& prompt, emscripten::val options) {
+    emscripten::val synthesize(
+        const std::string& prompt,
+        emscripten::val options,
+        emscripten::val onProgress
+    ) {
         emscripten::val output = emscripten::val::object();
         if (!handle_) {
             output.set("ok", false);
@@ -259,8 +284,8 @@ public:
             handle_,
             prompt.c_str(),
             &rawOptions,
-            nullptr,
-            nullptr
+            isFunction(onProgress) ? ttsSynthesisProgress : nullptr,
+            isFunction(onProgress) ? &onProgress : nullptr
         );
 
         if (!result.ok) {

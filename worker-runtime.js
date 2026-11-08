@@ -111,35 +111,70 @@ if (self.name?.startsWith("em-pthread")) {
         );
     }
 
-    async function initializeTts(files, options) {
+    async function initializeTts(files, options, onProgress) {
         if (tts) {
             throw new Error("A TTS model is already loaded");
         }
 
-        if (!ttsModule) {
-            const moduleOptions = {
-                workerFiles: files
-            };
+        const startedAt = performance.now();
+        const reportProgress = (stage, progress = null, details = {}) => {
+            const elapsedSeconds = ((performance.now() - startedAt) / 1000).toFixed(1);
+            console.info(`[AIOne TTS] ${stage}`, {
+                elapsedSeconds,
+                progress,
+                ...details
+            });
+            onProgress?.({ stage, progress, elapsedSeconds, ...details });
+        };
 
-            if (WASM_OVERRIDE || !HAS_EXTERNAL_RUNTIME) {
-                moduleOptions.locateFile = locateFile;
-            }
-
-            ttsModule = await Module(moduleOptions);
-            tts = new ttsModule.TtsModel();
-        }
-
-        const modelPath = "/models/" + files[0].name;
-        const mmprojPath = "/models/" + files[1].name;
+        reportProgress("initializing-runtime", null, {
+            model: files[0].name,
+            modelBytes: files[0].size,
+            mmproj: files[1].name,
+            mmprojBytes: files[1].size
+        });
 
         try {
-            const loaded = await tts.loadModel(modelPath, mmprojPath, options ?? {});
+            if (!ttsModule) {
+                const moduleOptions = {
+                    workerFiles: files
+                };
+
+                if (WASM_OVERRIDE || !HAS_EXTERNAL_RUNTIME) {
+                    moduleOptions.locateFile = locateFile;
+                }
+
+                ttsModule = await Module(moduleOptions);
+                tts = new ttsModule.TtsModel();
+            }
+
+            reportProgress("loading-model", 0);
+            const modelPath = "/models/" + files[0].name;
+            const mmprojPath = "/models/" + files[1].name;
+            const lastReportedPercent = { backbone: -1, mmproj: -1 };
+            const loaded = await tts.loadModel(
+                modelPath,
+                mmprojPath,
+                options ?? {},
+                (stage, progress) => {
+                    const percent = Math.floor(progress * 100);
+                    if (percent === lastReportedPercent[stage]) return;
+                    lastReportedPercent[stage] = percent;
+                    reportProgress(
+                        stage === "backbone" ? "loading-backbone" : "loading-mmproj",
+                        percent
+                    );
+                }
+            );
             if (!loaded) {
                 throw new Error(tts.lastError() || "Failed to load TTS model");
             }
+            reportProgress("loaded", 100);
         } catch (error) {
-            tts.delete();
+            console.error("[AIOne TTS] Model load failed", error);
+            tts?.delete();
             tts = undefined;
+            ttsModule = undefined;
             throw error;
         }
     }
@@ -150,14 +185,37 @@ if (self.name?.startsWith("em-pthread")) {
                 return initialize(args.file, callbacks.onProgress);
 
             case "ttsLoadModel":
-                return initializeTts(args.files, args.options);
+                return initializeTts(args.files, args.options, callbacks.onTtsProgress);
 
             case "ttsSynthesize": {
                 if (!tts?.isLoaded()) {
                     throw new Error("No TTS model is loaded");
                 }
 
-                const result = await tts.synthesize(args.prompt, args.options ?? {});
+                console.info("[AIOne TTS] Starting synthesis", {
+                    promptLength: args.prompt.length,
+                    options: args.options ?? {}
+                });
+                callbacks.onTtsProgress?.({
+                    stage: "processing-prompt",
+                    progress: null,
+                    elapsedSeconds: "0.0"
+                });
+                const onProgress = callbacks.onTtsProgress
+                    ? (stage, progress) => callbacks.onTtsProgress({
+                        stage,
+                        progress,
+                        elapsedSeconds: callbacks.synthesisStartedAt
+                            ? ((performance.now() - callbacks.synthesisStartedAt) / 1000).toFixed(1)
+                            : undefined
+                    })
+                    : undefined;
+                const result = await tts.synthesize(args.prompt, args.options ?? {}, onProgress);
+                console.info("[AIOne TTS] Synthesis complete", {
+                    samples: result.samples,
+                    sampleRate: result.sampleRate,
+                    stats: result.stats
+                });
                 if (!result.ok) {
                     throw new Error(result.error || tts.lastError() || "Failed to synthesize speech");
                 }
@@ -248,8 +306,18 @@ if (self.name?.startsWith("em-pthread")) {
                 });
             }
 
+            if (data.args?.progress) {
+                callbacks.onTtsProgress = progress => port.postMessage({
+                    id: data.id,
+                    ttsProgress: progress
+                });
+            }
+
             const execute = operationQueue.then(() =>
-                invoke(data.method, data.args ?? {}, callbacks)
+                invoke(data.method, data.args ?? {}, {
+                    ...callbacks,
+                    synthesisStartedAt: data.method === "ttsSynthesize" ? performance.now() : undefined
+                })
             );
 
             operationQueue = execute.catch(() => {});
