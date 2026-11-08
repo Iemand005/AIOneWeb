@@ -113,7 +113,7 @@ static std::string stringField(const emscripten::val& object, const char* name) 
 
 static void ttsLoadProgress(int stage, float progress, void* userData) {
     auto* callback = static_cast<emscripten::val*>(userData);
-    const char* stageName = "mmproj";
+    std::string stageName = "mmproj";
     switch (stage) {
         case AIONE_TTS_LOAD_STAGE_BACKBONE:
             stageName = "backbone";
